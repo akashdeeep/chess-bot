@@ -1,4 +1,6 @@
 import pygame
+import copy
+import moves
 
 pygame.init()
 width = 1000
@@ -10,6 +12,7 @@ font = pygame.font.SysFont("Arial", 30)
 big_font = pygame.font.SysFont("Arial", 50)
 clock = pygame.time.Clock()
 fps = 60
+counter = 0
 
 
 white_pieces = [
@@ -315,61 +318,355 @@ def draw_pieces():
                 )
 
 
-def check_options():
-    pass
+def filter_moves(moves_list, piece_ind):
+    out_list = []
+    for i in moves_list:
+        if not detect_pre_check(turn_step, i, piece_ind):
+            out_list.append(i)
+    return out_list
+
+
+def check_options(color):
+    if color == "white":
+        pieces = white_pieces
+        locations = white_locations
+        other_pieces = black_pieces
+        other_locations = black_locations
+    else:
+        pieces = black_pieces
+        locations = black_locations
+        other_pieces = white_pieces
+        other_locations = white_locations
+
+    moves_list = []
+    all_moves_list = []
+    for i in range(len(pieces)):
+        location = locations[i]
+        piece = pieces[i]
+        if piece == "P":
+            moves_list = moves.pawn_moves(
+                locations, other_locations, pieces, other_pieces, color, location
+            )
+        elif piece == "R":
+            moves_list = moves.rook_moves(
+                locations, other_locations, pieces, other_pieces, color, location
+            )
+        elif piece == "N":
+            moves_list = moves.knight_moves(
+                locations, other_locations, pieces, other_pieces, color, location
+            )
+        elif piece == "B":
+            moves_list = moves.bishop_moves(
+                locations, other_locations, pieces, other_pieces, color, location
+            )
+        elif piece == "Q":
+            moves_list = moves.queen_moves(
+                locations, other_locations, pieces, other_pieces, color, location
+            )
+        elif piece == "K":
+            moves_list = moves.king_moves(
+                locations, other_locations, pieces, other_pieces, color, location
+            )
+        moves_list = filter_moves(moves_list, i)
+        all_moves_list.append(moves_list)
+    return all_moves_list
+
+
+def check_valid_moves():
+    if turn_step < 2:
+        options_list = white_options
+    else:
+        options_list = black_options
+    valid_options = options_list[selection]
+    return valid_options
+
+
+def draw_valid(moves):
+    if turn_step < 2:
+        color = "red"
+    else:
+        color = "blue"
+    for i in range(len(moves)):
+        pygame.draw.circle(
+            screen, color, (moves[i][0] * 100 + 50, moves[i][1] * 100 + 50), 5
+        )
+
+
+def draw_captured_pieces():
+    for i in range(len(captured_pieces_white)):
+        captured_piece = captured_pieces_white[i]
+        index = piece_list.index(captured_piece)
+        screen.blit(small_black_images[index], (825, 20 + 50 * i))
+    for i in range(len(captured_pieces_black)):
+        captured_piece = captured_pieces_black[i]
+        index = piece_list.index(captured_piece)
+        screen.blit(small_white_images[index], (925, 20 + 50 * i))
+
+
+def detect_check(
+    turn_step,
+    white_pieces=white_pieces,
+    black_pieces=black_pieces,
+    white_locations=white_locations,
+    black_locations=black_locations,
+):
+    if turn_step < 2:
+        king_location = white_locations[white_pieces.index("K")]
+        other_locations = black_locations
+        other_pieces = black_pieces
+        for i in range(len(other_pieces)):
+            piece = other_pieces[i]
+            location = other_locations[i]
+            if piece == "P":
+                moves_list = moves.pawn_moves(
+                    other_locations,
+                    white_locations,
+                    other_pieces,
+                    white_pieces,
+                    "black",
+                    location,
+                )
+            elif piece == "R":
+                moves_list = rook_moves(
+                    other_locations,
+                    white_locations,
+                    other_pieces,
+                    white_pieces,
+                    "black",
+                    location,
+                )
+            elif piece == "N":
+                moves_list = moves.knight_moves(
+                    other_locations,
+                    white_locations,
+                    other_pieces,
+                    white_pieces,
+                    "black",
+                    location,
+                )
+            elif piece == "B":
+                moves_list = moves.bishop_moves(
+                    other_locations,
+                    white_locations,
+                    other_pieces,
+                    white_pieces,
+                    "black",
+                    location,
+                )
+            elif piece == "Q":
+                moves_list = moves.queen_moves(
+                    other_locations,
+                    white_locations,
+                    other_pieces,
+                    white_pieces,
+                    "black",
+                    location,
+                )
+            elif piece == "K":
+                moves_list = moves.king_moves(
+                    other_locations,
+                    white_locations,
+                    other_pieces,
+                    white_pieces,
+                    "black",
+                    location,
+                )
+            if king_location in moves_list:
+                return True
+    else:
+        king_location = black_locations[black_pieces.index("K")]
+        other_locations = white_locations
+        other_pieces = white_pieces
+        for i in range(len(other_pieces)):
+            piece = other_pieces[i]
+            location = other_locations[i]
+            if piece == "P":
+                moves_list = moves.pawn_moves(
+                    other_locations,
+                    black_locations,
+                    other_pieces,
+                    black_pieces,
+                    "white",
+                    location,
+                )
+            elif piece == "R":
+                moves_list = moves.rook_moves(
+                    other_locations,
+                    black_locations,
+                    other_pieces,
+                    black_pieces,
+                    "white",
+                    location,
+                )
+            elif piece == "N":
+                moves_list = moves.knight_moves(
+                    other_locations,
+                    black_locations,
+                    other_pieces,
+                    black_pieces,
+                    "white",
+                    location,
+                )
+            elif piece == "B":
+                moves_list = moves.bishop_moves(
+                    other_locations,
+                    black_locations,
+                    other_pieces,
+                    black_pieces,
+                    "white",
+                    location,
+                )
+            elif piece == "Q":
+                moves_list = moves.queen_moves(
+                    other_locations,
+                    black_locations,
+                    other_pieces,
+                    black_pieces,
+                    "white",
+                    location,
+                )
+            elif piece == "K":
+                moves_list = moves.king_moves(
+                    other_locations,
+                    black_locations,
+                    other_pieces,
+                    black_pieces,
+                    "white",
+                    location,
+                )
+            if king_location in moves_list:
+                return True
+    return False
+
+
+def detect_pre_check(turn_step, move, piece_ind):
+    if turn_step < 2:
+        copy_pieces = copy.deepcopy(black_pieces)
+        copy_locations = copy.deepcopy(black_locations)
+        copy_other_pieces = copy.deepcopy(white_pieces)
+        copy_other_locations = copy.deepcopy(white_locations)
+        copy_pieces[piece_ind] = move
+        if move in copy_other_locations:
+            copy_other_pieces.pop(copy_other_locations.index(move))
+            copy_other_locations.pop(copy_other_locations.index(move))
+        if detect_check(
+            turn_step,
+            copy_pieces,
+            copy_other_pieces,
+            copy_locations,
+            copy_other_locations,
+        ):
+            return True
+    else:
+        copy_pieces = copy.deepcopy(white_pieces)
+        copy_locations = copy.deepcopy(white_locations)
+        copy_other_pieces = copy.deepcopy(black_pieces)
+        copy_other_locations = copy.deepcopy(black_locations)
+        copy_pieces[piece_ind] = move
+        if move in copy_other_locations:
+            copy_other_pieces.pop(copy_other_locations.index(move))
+            copy_other_locations.pop(copy_other_locations.index(move))
+        if detect_check(
+            turn_step,
+            copy_pieces,
+            copy_other_pieces,
+            copy_locations,
+            copy_other_locations,
+        ):
+            return True
+
+    return False
+
+
+def draw_check():
+    checked = detect_check(turn_step)
+
+    if turn_step < 2:
+        king_location = white_locations[white_pieces.index("K")]
+        if checked:
+            if counter < 15:
+                pygame.draw.circle(
+                    screen,
+                    "dark red",
+                    (king_location[0] * 100 + 50, king_location[1] * 100 + 50),
+                    20,
+                )
+    else:
+        king_location = black_locations[black_pieces.index("K")]
+        if checked:
+            if counter < 15:
+                pygame.draw.circle(
+                    screen,
+                    "dark blue",
+                    (king_location[0] * 100 + 50, king_location[1] * 100 + 50),
+                    20,
+                )
 
 
 black_options = check_options("black")
 white_options = check_options("white")
 
 game_over = False
+moves_counter = 0
 while not game_over:
     clock.tick(fps)
+    if counter < 30:
+        counter += 1
+    else:
+        counter = 0
+
     screen.fill("dark gray")
     draw_board()
     draw_pieces()
+    draw_captured_pieces()
+    draw_check()
+    if selection != 100:
+        valid_moves = check_valid_moves()
+        draw_valid(valid_moves)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             game_over = True
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not game_over:
             x_coord = event.pos[0] // 100
             y_coord = event.pos[1] // 100
             click_coords = (x_coord, y_coord)
             if turn_step < 2:
                 if click_coords in white_locations:
                     selection = white_locations.index(click_coords)
-                    if turn_step == 0:
-                        turn_step = 1
-                    if click_coords in valid_moves and selection != 100:
-                        white_locations[selection] = click_coords
-                        if click_coords in black_locations:
-                            black_piece = black_locations.index(click_coords)
-                            captured_pieces_white.append(black_pieces[black_piece])
-                            black_pieces.pop(black_piece)
-                            black_locations.pop(black_piece)
-                        black_options = check_options("black")
-                        white_options = check_options("white")
-                        turn = 1
-                        selection = 100
-                        valid_moves = []
+                if turn_step == 0:
+                    turn_step = 1
+                if click_coords in valid_moves and selection != 100:
+                    white_locations[selection] = click_coords
+                    if click_coords in black_locations:
+                        black_piece = black_locations.index(click_coords)
+                        captured_pieces_white.append(black_pieces[black_piece])
+                        black_pieces.pop(black_piece)
+                        black_locations.pop(black_piece)
+                    black_options = check_options("black")
+                    white_options = check_options("white")
+                    turn_step = 2
+                    selection = 100
+                    valid_moves = []
+                    moves_counter += 1
             if turn_step >= 2:
                 if click_coords in black_locations:
                     selection = black_locations.index(click_coords)
-                    if turn_step == 2:
-                        turn_step = 3
-                    if click_coords in valid_moves and selection != 100:
-                        black_locations[selection] = click_coords
-                        if click_coords in white_locations:
-                            white_piece = white_locations.index(click_coords)
-                            captured_pieces_black.append(white_pieces[white_piece])
-                            white_pieces.pop(white_piece)
-                            white_locations.pop(white_piece)
-                        black_options = check_options("black")
-                        white_options = check_options("white")
-                        turn = 0
-                        selection = 100
-                        valid_moves = []
+                if turn_step == 2:
+                    turn_step = 3
+                if click_coords in valid_moves and selection != 100:
+                    black_locations[selection] = click_coords
+                    if click_coords in white_locations:
+                        white_piece = white_locations.index(click_coords)
+                        captured_pieces_black.append(white_pieces[white_piece])
+                        white_pieces.pop(white_piece)
+                        white_locations.pop(white_piece)
+                    black_options = check_options("black")
+                    white_options = check_options("white")
+                    turn_step = 0
+                    selection = 100
+                    valid_moves = []
+                    moves_counter += 1
 
     pygame.display.update()
 
