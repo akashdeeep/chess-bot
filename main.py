@@ -252,6 +252,16 @@ def draw_board():
 pieces_offset = [(22, 25), (18, 20), (18, 20), (14, 16), (11, 11), (11, 11)]
 
 
+def print_board():
+    board = [[" " for i in range(8)] for j in range(8)]
+    for i in range(len(white_pieces)):
+        board[white_locations[i][1]][white_locations[i][0]] = white_pieces[i]
+    for i in range(len(black_pieces)):
+        board[black_locations[i][1]][black_locations[i][0]] = black_pieces[i]
+    for i in range(8):
+        print(board[i])
+
+
 def draw_pieces():
     for i in range(len(white_pieces)):
         index = piece_list.index(white_pieces[i])
@@ -318,10 +328,135 @@ def draw_pieces():
                 )
 
 
+def detect_check(
+    turn_step,
+    white_pieces=white_pieces,
+    black_pieces=black_pieces,
+    white_locations=white_locations,
+    black_locations=black_locations,
+):
+    print("detect_check")
+    print_board()
+    if turn_step < 2:
+        king_location = white_locations[white_pieces.index("K")]
+        other_locations = black_locations
+        other_pieces = black_pieces
+        locations = white_locations
+        pieces = white_pieces
+        color = "white"
+    else:
+        king_location = black_locations[black_pieces.index("K")]
+        other_locations = white_locations
+        other_pieces = white_pieces
+        locations = black_locations
+        pieces = black_pieces
+        color = "black"
+    for i in range(len(other_pieces)):
+        piece = other_pieces[i]
+        location = other_locations[i]
+        if piece == "P":
+            moves_list = moves.pawn_moves(
+                other_locations,
+                locations,
+                other_pieces,
+                pieces,
+                color,
+                location,
+            )
+        elif piece == "R":
+            moves_list = moves.rook_moves(
+                other_locations,
+                locations,
+                other_pieces,
+                pieces,
+                color,
+                location,
+            )
+        elif piece == "N":
+            moves_list = moves.knight_moves(
+                other_locations,
+                locations,
+                other_pieces,
+                pieces,
+                color,
+                location,
+            )
+        elif piece == "B":
+            moves_list = moves.bishop_moves(
+                other_locations,
+                locations,
+                other_pieces,
+                pieces,
+                color,
+                location,
+            )
+        elif piece == "Q":
+            moves_list = moves.queen_moves(
+                other_locations,
+                locations,
+                other_pieces,
+                pieces,
+                color,
+                location,
+            )
+        elif piece == "K":
+            moves_list = moves.king_moves(
+                other_locations,
+                locations,
+                other_pieces,
+                pieces,
+                color,
+                location,
+            )
+        if king_location in moves_list:
+            return True
+    return False
+
+
+def detect_pre_check(
+    turn_step,
+    move,
+    piece_ind,
+):
+    copy_white_pieces = copy.deepcopy(white_pieces)
+    copy_white_locations = copy.deepcopy(white_locations)
+    copy_black_pieces = copy.deepcopy(black_pieces)
+    copy_black_locations = copy.deepcopy(black_locations)
+
+    if turn_step < 2:
+        copy_white_locations[piece_ind] = move
+        if move in copy_black_locations:
+            copy_black_pieces.pop(copy_black_locations.index(move))
+            copy_black_locations.remove(move)
+        if copy_white_pieces[piece_ind] == "P" and move[1] == 7:
+            copy_white_pieces[piece_ind] = "Q"
+    else:
+        copy_black_locations[piece_ind] = move
+        if move in copy_white_locations:
+            copy_white_pieces.pop(copy_white_locations.index(move))
+            copy_white_locations.remove(move)
+        if copy_black_pieces[piece_ind] == "P" and move[1] == 0:
+            copy_black_pieces[piece_ind] = "Q"
+
+    if detect_check(
+        (turn_step) % 4,
+        copy_white_pieces,
+        copy_black_pieces,
+        copy_white_locations,
+        copy_black_locations,
+    ):
+        return True
+    return False
+
+
 def filter_moves(moves_list, piece_ind):
     out_list = []
     for i in moves_list:
-        if not detect_pre_check(turn_step, i, piece_ind):
+        if not detect_pre_check(
+            turn_step,
+            i,
+            piece_ind,
+        ):
             out_list.append(i)
     return out_list
 
@@ -338,6 +473,8 @@ def check_options(color):
         other_pieces = white_pieces
         other_locations = white_locations
 
+    # print("check_options")
+    # print_board()
     moves_list = []
     all_moves_list = []
     for i in range(len(pieces)):
@@ -401,181 +538,6 @@ def draw_captured_pieces():
         captured_piece = captured_pieces_black[i]
         index = piece_list.index(captured_piece)
         screen.blit(small_white_images[index], (925, 20 + 50 * i))
-
-
-def detect_check(
-    turn_step,
-    white_pieces=white_pieces,
-    black_pieces=black_pieces,
-    white_locations=white_locations,
-    black_locations=black_locations,
-):
-    if turn_step < 2:
-        king_location = white_locations[white_pieces.index("K")]
-        other_locations = black_locations
-        other_pieces = black_pieces
-        for i in range(len(other_pieces)):
-            piece = other_pieces[i]
-            location = other_locations[i]
-            if piece == "P":
-                moves_list = moves.pawn_moves(
-                    other_locations,
-                    white_locations,
-                    other_pieces,
-                    white_pieces,
-                    "black",
-                    location,
-                )
-            elif piece == "R":
-                moves_list = rook_moves(
-                    other_locations,
-                    white_locations,
-                    other_pieces,
-                    white_pieces,
-                    "black",
-                    location,
-                )
-            elif piece == "N":
-                moves_list = moves.knight_moves(
-                    other_locations,
-                    white_locations,
-                    other_pieces,
-                    white_pieces,
-                    "black",
-                    location,
-                )
-            elif piece == "B":
-                moves_list = moves.bishop_moves(
-                    other_locations,
-                    white_locations,
-                    other_pieces,
-                    white_pieces,
-                    "black",
-                    location,
-                )
-            elif piece == "Q":
-                moves_list = moves.queen_moves(
-                    other_locations,
-                    white_locations,
-                    other_pieces,
-                    white_pieces,
-                    "black",
-                    location,
-                )
-            elif piece == "K":
-                moves_list = moves.king_moves(
-                    other_locations,
-                    white_locations,
-                    other_pieces,
-                    white_pieces,
-                    "black",
-                    location,
-                )
-            if king_location in moves_list:
-                return True
-    else:
-        king_location = black_locations[black_pieces.index("K")]
-        other_locations = white_locations
-        other_pieces = white_pieces
-        for i in range(len(other_pieces)):
-            piece = other_pieces[i]
-            location = other_locations[i]
-            if piece == "P":
-                moves_list = moves.pawn_moves(
-                    other_locations,
-                    black_locations,
-                    other_pieces,
-                    black_pieces,
-                    "white",
-                    location,
-                )
-            elif piece == "R":
-                moves_list = moves.rook_moves(
-                    other_locations,
-                    black_locations,
-                    other_pieces,
-                    black_pieces,
-                    "white",
-                    location,
-                )
-            elif piece == "N":
-                moves_list = moves.knight_moves(
-                    other_locations,
-                    black_locations,
-                    other_pieces,
-                    black_pieces,
-                    "white",
-                    location,
-                )
-            elif piece == "B":
-                moves_list = moves.bishop_moves(
-                    other_locations,
-                    black_locations,
-                    other_pieces,
-                    black_pieces,
-                    "white",
-                    location,
-                )
-            elif piece == "Q":
-                moves_list = moves.queen_moves(
-                    other_locations,
-                    black_locations,
-                    other_pieces,
-                    black_pieces,
-                    "white",
-                    location,
-                )
-            elif piece == "K":
-                moves_list = moves.king_moves(
-                    other_locations,
-                    black_locations,
-                    other_pieces,
-                    black_pieces,
-                    "white",
-                    location,
-                )
-            if king_location in moves_list:
-                return True
-    return False
-
-
-def detect_pre_check(turn_step, move, piece_ind):
-    if turn_step < 2:
-        copy_pieces = copy.deepcopy(black_pieces)
-        copy_locations = copy.deepcopy(black_locations)
-        copy_other_pieces = copy.deepcopy(white_pieces)
-        copy_other_locations = copy.deepcopy(white_locations)
-        copy_pieces[piece_ind] = move
-        if move in copy_other_locations:
-            copy_other_pieces.pop(copy_other_locations.index(move))
-            copy_other_locations.pop(copy_other_locations.index(move))
-        if detect_check(
-            turn_step,
-            copy_pieces,
-            copy_other_pieces,
-            copy_locations,
-            copy_other_locations,
-        ):
-            return True
-    else:
-        copy_pieces = copy.deepcopy(white_pieces)
-        copy_locations = copy.deepcopy(white_locations)
-        copy_other_pieces = copy.deepcopy(black_pieces)
-        copy_other_locations = copy.deepcopy(black_locations)
-        copy_pieces[piece_ind] = move
-        if move in copy_other_locations:
-            copy_other_pieces.pop(copy_other_locations.index(move))
-            copy_other_locations.pop(copy_other_locations.index(move))
-        if detect_check(
-            turn_step,
-            copy_pieces,
-            copy_other_pieces,
-            copy_locations,
-            copy_other_locations,
-        ):
-            return True
-
-    return False
 
 
 def draw_check():
@@ -643,6 +605,10 @@ while not game_over:
                         captured_pieces_white.append(black_pieces[black_piece])
                         black_pieces.pop(black_piece)
                         black_locations.pop(black_piece)
+                        white_piece = white_pieces[white_locations.index(click_coords)]
+                        if white_piece == "P" and click_coords[1] == 7:
+                            white_pieces[white_locations.index(click_coords)] = "Q"
+
                     black_options = check_options("black")
                     white_options = check_options("white")
                     turn_step = 2
@@ -661,6 +627,9 @@ while not game_over:
                         captured_pieces_black.append(white_pieces[white_piece])
                         white_pieces.pop(white_piece)
                         white_locations.pop(white_piece)
+                        black_piece = black_pieces[black_locations.index(click_coords)]
+                        if black_piece == "P" and click_coords[1] == 0:
+                            black_pieces[black_locations.index(click_coords)] = "Q"
                     black_options = check_options("black")
                     white_options = check_options("white")
                     turn_step = 0

@@ -8,8 +8,7 @@ def pawn_moves(locations, other_locations, pieces, other_pieces, color, coord):
                 coord[1] + 1,
             )
             not in other_locations
-            and coord[1] >= 1
-            and coord[1] < 7
+            and coord[1] >= 0
         ):
             moves_list.append((coord[0], coord[1] + 1))
         if (

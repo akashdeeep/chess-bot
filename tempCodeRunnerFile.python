@@ -1,0 +1,11 @@
+import copy
+
+def foo(lst):
+    lst2 = copy.deepcopy(lst)
+    lst2[0] = 100
+    print(lst2)
+
+
+lst = [21,2,3,4,5,6,7,8,9,10]
+foo(lst)
+print(lst)
